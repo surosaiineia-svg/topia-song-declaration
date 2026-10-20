@@ -1,0 +1,15 @@
+const {parseSongClip}=require('../clip-parser.js');const assert=require('node:assert/strict');
+const people=[['Ｔａｎａ．Ｈ','作詞'],['芦田　菜名子','作詞'],['ＭＡＲＣＨＩＮ','作曲'],['Ｔａｎａ．Ｈ','作曲'],['芦田　菜名子','作曲'],['ソニー・ミュージックパブリッシング','出版者']];
+const table='<table><tbody><tr><th colspan="4">著作者/出版者情報</th><th colspan="2">管理情報</th></tr><tr><th>No.</th><th>著作者/出版者</th><th>識別</th><th>契約</th><th>所属団体</th><th>特記</th></tr>'+people.map(([n,r],i)=>`<tr><td>${i+1}</td><td>${n}</td><td>${r}</td><td></td><td>JASRAC</td><td></td></tr>`).join('')+'</tbody></table>';
+const cards=people.map(([n,r],i)=>`<table><tr><th colspan="3">No.${i+1}</th></tr><tr><th colspan="2">著作者/出版者</th><td>${n}</td></tr><tr><th rowspan="2">著作者/出版者情報</th><th>識別</th><td>${r}</td></tr></table>`).join('\n');
+const prefix='検索結果画面に戻る 作品コード\n\n**779-7124-8**\n\nISWC **T-326.481.803-9**\n\nバラライカ\n\nこの作品は、JASRACが著作権を管理しています。\n';
+const suffix='作品タイトル一覧(正題・副題)\n| 番号/区分 | 作品タイトル |\n| --- | --- |\n| 正題 | バラライカ   バラライカ   BARARAIKA |\nアーティスト名一覧\n検索結果画面に戻る';
+const expected={title:'バラライカ',code:'779-7124-8',society:'JASRAC',lyricist:'Ｔａｎａ．Ｈ / 芦田 菜名子',composer:'ＭＡＲＣＨＩＮ / Ｔａｎａ．Ｈ / 芦田 菜名子'};
+assert.deepEqual(parseSongClip(prefix+(table+cards).repeat(20)+suffix),expected);
+assert.deepEqual(parseSongClip(prefix+cards+suffix),expected);
+assert.deepEqual(parseSongClip('曲名：テスト\nアーティスト名：A\n作詞者：B\n作曲者：C\n作品コード：123-4567-8'),{title:'テスト',artist:'A',lyricist:'B',composer:'C',code:'123-4567-8',society:'JASRAC'});
+assert.deepEqual(parseSongClip('何もない\nアーティスト名一覧\n検索結果画面に戻る'),{});
+assert.equal(parseSongClip(prefix+table).artist,undefined);
+assert.equal(parseSongClip(prefix+table).composer.includes('出版'),false);
+assert.equal(parseSongClip('曲名：<script>alert(1)</script>安全').title,'安全');
+console.log('Passed: repeated desktop tables, mobile cards, title/code, missing artist, publisher exclusion, legacy labels, script removal.');
